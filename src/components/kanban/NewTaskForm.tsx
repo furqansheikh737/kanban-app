@@ -30,9 +30,9 @@ export default function NewTaskForm({ onAdd }: Props) {
         {/* 'group-hover' icon par lagaya hai jo button ke hover par trigger hoga */}
         <Plus 
           size={18} 
-          className="transition-transform duration-500 ease-out group-hover:rotate-180 text-white/50 group-hover:text-white" 
+          className="transition-transform duration-500 ease-out group-hover:rotate-180 text-[#172b4d] group-hover:text-[#172b4d]" 
         />
-        <span className="text-sm font-medium tracking-wide">Add a card</span>
+        <span className="text-sm font-medium text-[#172b4d]">Add a card</span>
       </button>
     );
   }

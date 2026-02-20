@@ -24,42 +24,39 @@ export default function Column({ column, tasks, onAddTask, onDeleteTask }: Props
   };
 
   return (
-    /* Background ko bg-transparent ya bohat halka bg-white/10 rakha hai */
-    <div className="flex flex-col w-72 bg-white/10 backdrop-blur-md rounded-2xl max-h-full border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] overflow-hidden group transition-all duration-300">
+    /* Column Container: Solid Trello Grey (#ebecf0) taake contrast bana rahe */
+    <div className="flex flex-col w-72 bg-[#ebecf0] rounded-xl max-h-full shadow-xl border border-white/20 overflow-hidden group">
       
-      {/* Column Header: Text ko white kiya taake dark background par nazar aaye */}
-      <div className="p-4 flex justify-between items-center bg-white/10 border-b border-white/10">
-        <div className="flex items-center gap-2 min-w-0">
-          <h2 className="font-bold text-white text-sm px-1 truncate drop-shadow-md">
-            {column.title}
-          </h2>
-          <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px] text-white font-bold backdrop-blur-sm border border-white/10">
-            {tasks.length}
-          </span>
-        </div>
-
-        {/* List Actions */}
+      {/* --- Column Header: Dark Text for maximum visibility --- */}
+      <div className="p-3 pb-1 flex justify-between items-center">
+        <h2 className="font-bold text-[#172b4d] text-sm px-2 py-1 flex-1 cursor-pointer truncate">
+          {column.title}
+        </h2>
+        
         <div className="flex items-center gap-1">
+          {/* Delete Button: Red color for clarity */}
           <button 
             onClick={handleDeleteList}
-            className="p-1.5 text-white/70 hover:bg-red-500/80 hover:text-white rounded-lg transition-all opacity-0 group-hover:opacity-100 active:scale-90"
+            className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-all opacity-0 group-hover:opacity-100"
+            title="Delete list"
           >
-            <Trash2 size={15} />
+            <Trash2 size={14} />
           </button>
-          <button className="p-1.5 text-white/70 hover:bg-white/10 rounded-lg">
-            <MoreHorizontal size={15} />
+          
+          <button className="p-1.5 text-[#44546f] hover:bg-[#dcdfe4] rounded-md transition-colors">
+            <MoreHorizontal size={16} />
           </button>
         </div>
       </div>
 
-      {/* Droppable Area */}
+      {/* --- Droppable Task Area --- */}
       <Droppable droppableId={column.id}>
         {(provided, snapshot) => (
           <div
             {...provided.droppableProps}
             ref={provided.innerRef}
-            className={`p-3 transition-colors flex-1 min-h-[150px] max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-hide ${
-              snapshot.isDraggingOver ? 'bg-white/5' : ''
+            className={`px-2 py-1 transition-colors flex-1 min-h-[100px] max-h-[calc(100vh-250px)] overflow-y-auto ${
+              snapshot.isDraggingOver ? 'bg-[#dfe1e6]' : 'bg-transparent'
             }`}
           >
             {tasks.map((task, index) => (
@@ -73,18 +70,18 @@ export default function Column({ column, tasks, onAddTask, onDeleteTask }: Props
             
             {provided.placeholder}
 
-            {/* Empty State */}
-            {tasks.length === 0 && (
-              <div className="text-center py-12 border-2 border-dashed border-white/20 rounded-xl text-white/40 text-[11px] font-medium italic">
-                {searchTerm ? "No matching tasks" : "No cards here"}
+            {/* Empty State: Agar search match na ho */}
+            {tasks.length === 0 && searchTerm && (
+              <div className="text-center py-6 text-[#44546f] text-xs font-medium italic">
+                No matching tasks found
               </div>
             )}
           </div>
         )}
       </Droppable>
 
-      {/* Task Creation Form: Iska input bhi glass style ka hona chahiye */}
-      <div className="p-3 bg-white/5 border-t border-white/10">
+      {/* --- Footer: Add Card Section --- */}
+      <div className="p-2 mt-auto">
         <NewTaskForm onAdd={onAddTask} />
       </div>
     </div>

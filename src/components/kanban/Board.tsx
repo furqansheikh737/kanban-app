@@ -30,7 +30,7 @@ export default function Board() {
       <div 
         className="flex h-full min-h-[calc(100vh-64px)] overflow-x-auto p-6 gap-6 items-start scrollbar-thin relative transition-all duration-500"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1770110000218-e9376e581258?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')`,
+          backgroundImage: `url('https://plus.unsplash.com/premium_photo-1673890229294-d7ef433cadcc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDk0fHx8ZW58MHx8fHx8')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'fixed'
