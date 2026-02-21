@@ -8,13 +8,26 @@ import { useKanban } from '@/src/context/KanbanContext';
 import { Plus, X } from 'lucide-react';
 
 export default function Board() {
-  // Context se searchTerm bhi nikala filter karne ke liye
-  const { data, isLoading, moveTask, addTask, deleteTask, addColumn, searchTerm } = useKanban();
+  // Context se boards aur activeBoardId nikaala
+  const { 
+    boards, 
+    activeBoardId, 
+    isLoading, 
+    moveTask, 
+    addTask, 
+    deleteTask, 
+    addColumn, 
+    searchTerm 
+  } = useKanban();
+
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState("");
 
+  // 1. Current Active Board ka data nikalna
+  const activeBoard = boards.find(b => b.id === activeBoardId);
+
   if (isLoading) return <SkeletonBoard />;
-  if (!data) return null;
+  if (!activeBoard) return null;
 
   const handleAddList = () => {
     if (title.trim()) {
@@ -41,22 +54,21 @@ export default function Board() {
 
         {/* Board Content */}
         <div className="relative z-10 flex gap-6 items-start">
-          {data.columnOrder.map((columnId) => {
-            const column = data.columns[columnId];
+          {activeBoard.columnOrder.map((columnId) => {
+            const column = activeBoard.columns[columnId];
             
-            // --- Search Filtering Logic ---
-            // Har column ke tasks ko filter kar rahe hain title ke basis par
+            // --- Search Filtering Logic (Specific to Active Board) ---
             const filteredTasks = column.taskIds
-              .map((taskId) => data.tasks[taskId])
+              .map((taskId) => activeBoard.tasks[taskId])
               .filter((task) => 
-                task.title.toLowerCase().includes(searchTerm.toLowerCase())
+                task && task.title.toLowerCase().includes(searchTerm.toLowerCase())
               );
 
             return (
               <Column
                 key={column.id}
                 column={column}
-                tasks={filteredTasks} // Sirf filtered tasks pass honge
+                tasks={filteredTasks} 
                 onAddTask={(taskTitle) => addTask(column.id, taskTitle)}
                 onDeleteTask={(taskId) => deleteTask(taskId, column.id)}
               />

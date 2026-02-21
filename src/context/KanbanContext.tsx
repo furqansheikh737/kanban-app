@@ -5,125 +5,132 @@ import { BoardData, INITIAL_DATA, Task } from '@/src/types/kanban';
 import { DropResult } from '@hello-pangea/dnd';
 
 interface KanbanContextType {
-  data: BoardData | null;
+  boards: BoardData[];
+  activeBoardId: string;
+  setActiveBoardId: (id: string) => void;
   isLoading: boolean;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  addBoard: (title: string) => void;
   addTask: (columnId: string, title: string) => void;
   deleteTask: (taskId: string, columnId: string) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   moveTask: (result: DropResult) => void;
   addColumn: (title: string) => void;
-  deleteColumn: (columnId: string) => void; // Naya function interface mein
+  deleteColumn: (columnId: string) => void;
 }
 
 const KanbanContext = createContext<KanbanContextType | undefined>(undefined);
 
 export function KanbanProvider({ children }: { children: React.ReactNode }) {
-  const [data, setData] = useState<BoardData | null>(null);
+  // Boards ki array state
+  const [boards, setBoards] = useState<BoardData[]>([]);
+  const [activeBoardId, setActiveBoardId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // 1. Initial Load from LocalStorage
   useEffect(() => {
-    const saved = localStorage.getItem('kanban-data');
-    setData(saved ? JSON.parse(saved) : INITIAL_DATA);
+    const saved = localStorage.getItem('kanban-multi-boards');
+    const initialBoards = saved ? JSON.parse(saved) : [INITIAL_DATA];
+    
+    setBoards(initialBoards);
+    setActiveBoardId(initialBoards[0].id);
+    
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
 
+  // 2. Save to LocalStorage whenever boards change
   useEffect(() => {
-    if (data) {
-      localStorage.setItem('kanban-data', JSON.stringify(data));
+    if (boards.length > 0) {
+      localStorage.setItem('kanban-multi-boards', JSON.stringify(boards));
     }
-  }, [data]);
+  }, [boards]);
 
-  // --- List Delete Karne Ka Logic ---
-  const deleteColumn = (columnId: string) => {
-    setData((prev) => {
-      if (!prev) return prev;
-
-      const newColumns = { ...prev.columns };
-      const taskIdsToRemove = newColumns[columnId].taskIds;
-      
-      // 1. Column delete karo
-      delete newColumns[columnId];
-
-      // 2. Us column ke saare tasks bhi delete karo
-      const newTasks = { ...prev.tasks };
-      taskIdsToRemove.forEach((id) => {
-        delete newTasks[id];
-      });
-
-      // 3. columnOrder se ID nikalo
-      return {
-        ...prev,
-        tasks: newTasks,
-        columns: newColumns,
-        columnOrder: prev.columnOrder.filter((id) => id !== columnId),
-      };
-    });
+  // Helper: Active board nikalne ke liye
+  const updateActiveBoard = (updater: (prevBoard: BoardData) => BoardData) => {
+    setBoards(prevBoards => 
+      prevBoards.map(board => board.id === activeBoardId ? updater(board) : board)
+    );
   };
 
+  // --- Board Functions ---
+  const addBoard = (title: string) => {
+    const newBoard: BoardData = {
+      id: `board-${Date.now()}`,
+      title: title,
+      tasks: {},
+      columns: {
+        'col-1': { id: 'col-1', title: 'To Do', taskIds: [] },
+        'col-2': { id: 'col-2', title: 'In Progress', taskIds: [] },
+      },
+      columnOrder: ['col-1', 'col-2'],
+    };
+    setBoards([...boards, newBoard]);
+    setActiveBoardId(newBoard.id);
+  };
+
+  // --- Column Functions ---
   const addColumn = (title: string) => {
     const newColumnId = `col-${Date.now()}`;
-    const newColumn = {
-      id: newColumnId,
-      title: title,
-      taskIds: [],
-    };
+    const newColumn = { id: newColumnId, title, taskIds: [] };
 
-    setData((prev) => {
-      if (!prev) return prev;
+    updateActiveBoard(board => ({
+      ...board,
+      columns: { ...board.columns, [newColumnId]: newColumn },
+      columnOrder: [...board.columnOrder, newColumnId],
+    }));
+  };
+
+  const deleteColumn = (columnId: string) => {
+    updateActiveBoard(board => {
+      const newColumns = { ...board.columns };
+      const taskIdsToRemove = newColumns[columnId].taskIds;
+      delete newColumns[columnId];
+
+      const newTasks = { ...board.tasks };
+      taskIdsToRemove.forEach(id => delete newTasks[id]);
+
       return {
-        ...prev,
-        columns: {
-          ...prev.columns,
-          [newColumnId]: newColumn,
-        },
-        columnOrder: [...prev.columnOrder, newColumnId],
+        ...board,
+        tasks: newTasks,
+        columns: newColumns,
+        columnOrder: board.columnOrder.filter(id => id !== columnId),
       };
     });
   };
 
+  // --- Task Functions ---
   const addTask = (columnId: string, title: string) => {
     const newTaskId = `task-${Date.now()}`;
-    const newTask = { 
-      id: newTaskId, 
-      title, 
-      description: "", 
-      priority: "medium" as const 
-    };
+    const newTask = { id: newTaskId, title, description: "", priority: "medium" as const };
 
-    setData(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        tasks: { ...prev.tasks, [newTaskId]: newTask },
-        columns: {
-          ...prev.columns,
-          [columnId]: {
-            ...prev.columns[columnId],
-            taskIds: [...prev.columns[columnId].taskIds, newTaskId]
-          }
+    updateActiveBoard(board => ({
+      ...board,
+      tasks: { ...board.tasks, [newTaskId]: newTask },
+      columns: {
+        ...board.columns,
+        [columnId]: {
+          ...board.columns[columnId],
+          taskIds: [...board.columns[columnId].taskIds, newTaskId]
         }
-      };
-    });
+      }
+    }));
   };
 
   const deleteTask = (taskId: string, columnId: string) => {
-    setData(prev => {
-      if (!prev) return prev;
-      const newTasks = { ...prev.tasks };
+    updateActiveBoard(board => {
+      const newTasks = { ...board.tasks };
       delete newTasks[taskId];
-      
       return {
-        ...prev,
+        ...board,
         tasks: newTasks,
         columns: {
-          ...prev.columns,
+          ...board.columns,
           [columnId]: {
-            ...prev.columns[columnId],
-            taskIds: prev.columns[columnId].taskIds.filter(id => id !== taskId)
+            ...board.columns[columnId],
+            taskIds: board.columns[columnId].taskIds.filter(id => id !== taskId)
           }
         }
       };
@@ -131,54 +138,43 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateTask = (taskId: string, updates: Partial<Task>) => {
-    setData(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        tasks: {
-          ...prev.tasks,
-          [taskId]: { ...prev.tasks[taskId], ...updates }
-        }
-      };
-    });
+    updateActiveBoard(board => ({
+      ...board,
+      tasks: {
+        ...board.tasks,
+        [taskId]: { ...board.tasks[taskId], ...updates }
+      }
+    }));
   };
 
   const moveTask = (result: DropResult) => {
     const { destination, source, draggableId } = result;
-
     if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
-    setData(prev => {
-      if (!prev) return prev;
-
-      const start = prev.columns[source.droppableId];
-      const finish = prev.columns[destination.droppableId];
+    updateActiveBoard(board => {
+      const start = board.columns[source.droppableId];
+      const finish = board.columns[destination.droppableId];
 
       if (start === finish) {
         const newTaskIds = Array.from(start.taskIds);
         newTaskIds.splice(source.index, 1);
         newTaskIds.splice(destination.index, 0, draggableId);
-
         return {
-          ...prev,
-          columns: {
-            ...prev.columns,
-            [start.id]: { ...start, taskIds: newTaskIds }
-          }
+          ...board,
+          columns: { ...board.columns, [start.id]: { ...start, taskIds: newTaskIds } }
         };
       }
 
       const startTaskIds = Array.from(start.taskIds);
       startTaskIds.splice(source.index, 1);
-      
       const finishTaskIds = Array.from(finish.taskIds);
       finishTaskIds.splice(destination.index, 0, draggableId);
 
       return {
-        ...prev,
+        ...board,
         columns: {
-          ...prev.columns,
+          ...board.columns,
           [start.id]: { ...start, taskIds: startTaskIds },
           [finish.id]: { ...finish, taskIds: finishTaskIds }
         }
@@ -189,16 +185,19 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
   return (
     <KanbanContext.Provider 
       value={{ 
-        data, 
+        boards,
+        activeBoardId,
+        setActiveBoardId,
         isLoading, 
         searchTerm, 
         setSearchTerm, 
+        addBoard,
         addTask, 
         deleteTask, 
         updateTask, 
         moveTask, 
         addColumn,
-        deleteColumn // Value mein pass kiya
+        deleteColumn 
       }}
     >
       {children}
