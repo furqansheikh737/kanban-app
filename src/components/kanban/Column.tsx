@@ -24,20 +24,20 @@ export default function Column({ column, tasks, onAddTask, onDeleteTask }: Props
   };
 
   return (
-    /* Column Container: Solid Trello Grey (#ebecf0) taake contrast bana rahe */
-    <div className="flex flex-col w-72 bg-[#ebecf0] rounded-xl max-h-full shadow-xl border border-white/20 overflow-hidden group">
+    /* Column Container: 'group/column' name de diya taake nesting clear rahe */
+    <div className="flex flex-col w-72 bg-[#ebecf0] rounded-xl max-h-full shadow-xl border border-white/20 overflow-hidden group/column shrink-0">
       
-      {/* --- Column Header: Dark Text for maximum visibility --- */}
+      {/* --- Column Header --- */}
       <div className="p-3 pb-1 flex justify-between items-center">
         <h2 className="font-bold text-[#172b4d] text-sm px-2 py-1 flex-1 cursor-pointer truncate">
           {column.title}
         </h2>
         
         <div className="flex items-center gap-1">
-          {/* Delete Button: Red color for clarity */}
+          {/* Delete Button: Ab sirf is column ke hover par hi dikhega */}
           <button 
             onClick={handleDeleteList}
-            className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-all opacity-0 group-hover:opacity-100"
+            className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-all opacity-0 group-hover/column:opacity-100"
             title="Delete list"
           >
             <Trash2 size={14} />
@@ -55,7 +55,8 @@ export default function Column({ column, tasks, onAddTask, onDeleteTask }: Props
           <div
             {...provided.droppableProps}
             ref={provided.innerRef}
-            className={`px-2 py-1 transition-colors flex-1 min-h-[100px] max-h-[calc(100vh-250px)] overflow-y-auto ${
+            /* Scrollbar styling for column tasks */
+            className={`px-2 py-1 transition-colors flex-1 min-h-[100px] max-h-[calc(100vh-250px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent ${
               snapshot.isDraggingOver ? 'bg-[#dfe1e6]' : 'bg-transparent'
             }`}
           >
@@ -70,7 +71,6 @@ export default function Column({ column, tasks, onAddTask, onDeleteTask }: Props
             
             {provided.placeholder}
 
-            {/* Empty State: Agar search match na ho */}
             {tasks.length === 0 && searchTerm && (
               <div className="text-center py-6 text-[#44546f] text-xs font-medium italic">
                 No matching tasks found
@@ -82,6 +82,7 @@ export default function Column({ column, tasks, onAddTask, onDeleteTask }: Props
 
       {/* --- Footer: Add Card Section --- */}
       <div className="p-2 mt-auto">
+        {/* Note: Ensure NewTaskForm uses 'group/btn' inside it for the Plus icon animation */}
         <NewTaskForm onAdd={onAddTask} />
       </div>
     </div>

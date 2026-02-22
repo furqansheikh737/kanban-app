@@ -8,7 +8,6 @@ import { useKanban } from '@/src/context/KanbanContext';
 import { Plus, X } from 'lucide-react';
 
 export default function Board() {
-  // Context se boards aur activeBoardId nikaala
   const { 
     boards, 
     activeBoardId, 
@@ -23,7 +22,6 @@ export default function Board() {
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState("");
 
-  // 1. Current Active Board ka data nikalna
   const activeBoard = boards.find(b => b.id === activeBoardId);
 
   if (isLoading) return <SkeletonBoard />;
@@ -39,25 +37,34 @@ export default function Board() {
 
   return (
     <DragDropContext onDragEnd={moveTask}>
-      {/* Background Image & Galaxy Look */}
       <div 
-        className="flex h-full min-h-[calc(100vh-64px)] overflow-x-auto p-6 gap-6 items-start scrollbar-thin relative transition-all duration-500"
+        className={`
+          absolute inset-0 flex overflow-x-auto overflow-y-hidden p-6 gap-6 select-none
+          /* --- Tailwind-Scrollbar Plugin Classes --- */
+          scrollbar-h-4                    /* Moti height (16px) */
+          scrollbar-thumb-white/80         /* Slider ka color (Wazay white) */
+          scrollbar-track-black/40         /* Track ka color (Darker for contrast) */
+          scrollbar-thumb-rounded-full     /* Slider ke kinare round */
+          scrollbar-track-rounded-full     /* Track ke kinare round */
+          hover:scrollbar-thumb-white      /* Hover par full chamak */
+          active:scrollbar-thumb-gray-200  /* Click karne par halka gray */
+        `}
         style={{
-          backgroundImage: `url('https://plus.unsplash.com/premium_photo-1673890229294-d7ef433cadcc?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDk0fHx8ZW58MHx8fHx8')`,
+          backgroundImage: `url('https://plus.unsplash.com/premium_photo-1762990917190-cab2289b2a7c?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDE1MHxpVUlzblZ0akIwWXx8ZW58MHx8fHx8')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'fixed'
         }}
       >
-        {/* Dark Overlay for better card visibility */}
-        <div className="absolute inset-0 bg-black/30 pointer-events-none" />
+        {/* Dark Overlay for better text readability */}
+        <div className="fixed inset-0 bg-black/30 pointer-events-none" />
 
-        {/* Board Content */}
-        <div className="relative z-10 flex gap-6 items-start">
+        {/* Board Content Wrapper */}
+        <div className="relative z-10 flex flex-nowrap gap-6 items-start h-full">
           {activeBoard.columnOrder.map((columnId) => {
             const column = activeBoard.columns[columnId];
-            
-            // --- Search Filtering Logic (Specific to Active Board) ---
+            if (!column) return null;
+
             const filteredTasks = column.taskIds
               .map((taskId) => activeBoard.tasks[taskId])
               .filter((task) => 
@@ -75,8 +82,8 @@ export default function Board() {
             );
           })}
 
-          {/* Add Another List (Glassmorphism Style) */}
-          <div className="min-w-[272px]">
+          {/* Add Another List Section */}
+          <div className="min-w-[272px] shrink-0 pb-10">
             {isAdding ? (
               <div className="bg-white/90 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-white/20 animate-in fade-in zoom-in duration-200">
                 <input

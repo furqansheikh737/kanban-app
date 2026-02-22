@@ -12,6 +12,7 @@ interface KanbanContextType {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   addBoard: (title: string) => void;
+  deleteBoard: (id: string) => void; // Added deleteBoard type
   addTask: (columnId: string, title: string) => void;
   deleteTask: (taskId: string, columnId: string) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
@@ -23,7 +24,6 @@ interface KanbanContextType {
 const KanbanContext = createContext<KanbanContextType | undefined>(undefined);
 
 export function KanbanProvider({ children }: { children: React.ReactNode }) {
-  // Boards ki array state
   const [boards, setBoards] = useState<BoardData[]>([]);
   const [activeBoardId, setActiveBoardId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
@@ -69,6 +69,20 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
     };
     setBoards([...boards, newBoard]);
     setActiveBoardId(newBoard.id);
+  };
+
+  // --- DELETE BOARD FUNCTION (NEWLY ADDED) ---
+  const deleteBoard = (id: string) => {
+    setBoards(prevBoards => {
+      const filteredBoards = prevBoards.filter(board => board.id !== id);
+      
+      // Agar delete hone wala board active tha, toh pehle board par switch karo
+      if (id === activeBoardId && filteredBoards.length > 0) {
+        setActiveBoardId(filteredBoards[0].id);
+      }
+      
+      return filteredBoards;
+    });
   };
 
   // --- Column Functions ---
@@ -192,6 +206,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
         searchTerm, 
         setSearchTerm, 
         addBoard,
+        deleteBoard, // Added to provider
         addTask, 
         deleteTask, 
         updateTask, 
