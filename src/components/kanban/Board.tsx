@@ -50,7 +50,7 @@ export default function Board() {
           active:scrollbar-thumb-gray-200  /* Click karne par halka gray */
         `}
         style={{
-          backgroundImage: `url('https://plus.unsplash.com/premium_photo-1762990917190-cab2289b2a7c?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDE1MHxpVUlzblZ0akIwWXx8ZW58MHx8fHx8')`,
+          backgroundImage: `url('https://images.unsplash.com/photo-1769708984129-adb918f38ad5?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDE3fENEd3V3WEpBYkV3fHxlbnwwfHx8fHw%3D')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'fixed'

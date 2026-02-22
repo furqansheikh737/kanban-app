@@ -58,7 +58,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
   // --- Board Functions ---
   const addBoard = (title: string) => {
     const newBoard: BoardData = {
-      id: `board-${Date.now()}`,
+      id: `board-${crypto.randomUUID()}`,
       title: title,
       tasks: {},
       columns: {
@@ -87,7 +87,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
 
   // --- Column Functions ---
   const addColumn = (title: string) => {
-    const newColumnId = `col-${Date.now()}`;
+    const newColumnId = `col-${crypto.randomUUID()}`;
     const newColumn = { id: newColumnId, title, taskIds: [] };
 
     updateActiveBoard(board => ({
@@ -117,7 +117,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
 
   // --- Task Functions ---
   const addTask = (columnId: string, title: string) => {
-    const newTaskId = `task-${Date.now()}`;
+    const newTaskId = `task-${crypto.randomUUID()}`;
     const newTask = { id: newTaskId, title, description: "", priority: "medium" as const };
 
     updateActiveBoard(board => ({
