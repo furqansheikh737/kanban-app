@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import Board from "@/src/components/kanban/Board";
+import HeaderDropdown from "@/src/components/kanban/HeaderDropdown";
+import FilterMenu from "@/src/components/kanban/FilterMenu"; // Naya Filter Component import kiya
 import { useKanban } from "@/src/context/KanbanContext";
 import {
   Search,
@@ -14,7 +16,6 @@ import {
   Info,
   Plus,
   Zap,
-  Filter,
   MoreHorizontal,
   CheckCircle2,
   X,
@@ -31,7 +32,7 @@ export default function KanbanPage() {
     addBoard,
     deleteBoard,
   } = useKanban();
-  
+
   const [showToast, setShowToast] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newBoardTitle, setNewBoardTitle] = useState("");
@@ -52,7 +53,7 @@ export default function KanbanPage() {
 
   const handleShare = async () => {
     const shareData = {
-      title: `${activeBoard?.title || "Default"} | Trello`,
+      title: `${activeBoard?.title || "Default"} | Kanban`,
       text: `Check out the ${activeBoard?.title || "Default"} board!`,
       url: typeof window !== "undefined" ? window.location.href : "",
     };
@@ -72,6 +73,7 @@ export default function KanbanPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden font-sans bg-[#0079bf]">
+      {/* Toast Notification */}
       {showToast && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className="bg-[#172B4D] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-white/10">
@@ -83,6 +85,7 @@ export default function KanbanPage() {
         </div>
       )}
 
+      {/* Create Board Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
           <div
@@ -101,7 +104,6 @@ export default function KanbanPage() {
                 <X size={16} />
               </button>
             </div>
-
             <form onSubmit={handleCreateBoard} className="p-4 pt-2">
               <div className="mb-4">
                 <label className="block text-xs font-bold text-[#44546f] mb-1.5 uppercase tracking-wider">
@@ -117,7 +119,6 @@ export default function KanbanPage() {
                   required
                 />
               </div>
-
               <button
                 type="submit"
                 disabled={!newBoardTitle.trim()}
@@ -134,6 +135,7 @@ export default function KanbanPage() {
         </div>
       )}
 
+      {/* Main Top Header */}
       <header className="h-12 px-4 flex items-center justify-between bg-[#0067a3] border-b border-white/10 z-50">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 px-2 py-1 hover:bg-white/20 rounded cursor-pointer transition-colors group">
@@ -147,14 +149,25 @@ export default function KanbanPage() {
           </div>
 
           <nav className="hidden lg:flex items-center gap-1 ml-2">
-            {["Workspaces", "Recent", "Starred", "Templates"].map((item) => (
-              <button
-                key={item}
-                className="flex items-center gap-1 px-3 py-1.5 text-white/90 text-sm font-medium hover:bg-white/20 rounded transition-colors"
-              >
-                {item} <ChevronDown size={14} />
-              </button>
-            ))}
+            <HeaderDropdown
+              title="Workspaces"
+              items={[
+                { label: "Personal Tasks" },
+                { label: "Client Project A" },
+              ]}
+            />
+            <HeaderDropdown
+              title="Recent"
+              items={[{ label: "Board: My Daily Routine" }]}
+            />
+            <HeaderDropdown
+              title="Starred"
+              items={[{ label: "Important Project" }]}
+            />
+            <HeaderDropdown
+              title="Templates"
+              items={[{ label: "Kanban Basics" }]}
+            />
             <button
               onClick={() => setIsModalOpen(true)}
               className="ml-1 bg-[#0052cc] hover:bg-[#0747a6] text-white px-3 py-1.5 rounded text-sm font-medium transition-colors shadow-sm active:scale-95"
@@ -181,15 +194,23 @@ export default function KanbanPage() {
           <button className="p-1.5 text-white/80 hover:bg-white/20 rounded-full transition-colors">
             <Bell size={18} />
           </button>
-          <div className="w-8 h-8 bg-[#DFE1E6] rounded-full flex items-center justify-center text-[#172b4d] text-xs font-bold cursor-pointer border-2 border-transparent hover:border-white transition-all ml-1">
-            JD
+          <div className="group relative ml-1">
+            <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-transparent hover:border-white transition-all cursor-pointer shadow-md">
+              <img
+                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80"
+                alt="User Profile"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {/* Online Status Dot */}
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-[#0067a3] rounded-full"></div>
           </div>
         </div>
       </header>
 
+      {/* Sub-Header (Board Controls) */}
       <header className="h-14 px-4 flex items-center justify-between bg-black/10 backdrop-blur-sm z-40">
         <div className="flex items-center gap-2">
-          {/* UPDATED: Default fallback here */}
           <h2 className="text-white font-bold text-lg px-2 py-1.5 hover:bg-white/10 rounded cursor-pointer transition-colors">
             {activeBoard?.title || "Default"}
           </h2>
@@ -235,23 +256,23 @@ export default function KanbanPage() {
                           setIsBoardDropdownOpen(false);
                         }}
                       >
-                        {/* UPDATED: Khali title ki jagah Default handle kiya */}
-                        <span className="truncate flex-1 px-1">{board.title || "Default"}</span>
-
+                        <span className="truncate flex-1 px-1">
+                          {board.title || "Default"}
+                        </span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (window.confirm(`Kya aap "${board.title || "Default"}" board delete karna chahte hain?`)) {
+                            if (
+                              window.confirm(
+                                `Delete board "${board.title || "Default"}"?`,
+                              )
+                            ) {
                               deleteBoard(board.id);
                               setShowToast(true);
                               setTimeout(() => setShowToast(false), 3000);
                             }
                           }}
-                          className={`p-1 rounded hover:bg-red-500 hover:text-white transition-opacity ${
-                            activeBoardId === board.id
-                              ? "opacity-100"
-                              : "opacity-0 group-hover:opacity-100"
-                          }`}
+                          className={`p-1 rounded hover:bg-red-500 hover:text-white transition-opacity ${activeBoardId === board.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -275,17 +296,28 @@ export default function KanbanPage() {
           </div>
         </div>
 
+        {/* Right Side Actions */}
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 px-3 py-2 text-white text-sm hover:bg-white/10 rounded-md transition-all font-medium">
-            <Filter size={16} />
-            <span className="hidden lg:inline">Filter</span>
-          </button>
+          {/* UPDATED: Ab ye real filter component hai */}
+          <FilterMenu />
+
+          <div className="flex items-center -space-x-1.5 ml-2">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="w-7 h-7 rounded-full bg-slate-300 border-2 border-[#0079bf] flex items-center justify-center text-[10px] font-bold shadow-sm cursor-pointer hover:-translate-y-1 transition-transform"
+              >
+                U{i}
+              </div>
+            ))}
+          </div>
+
           <button
             onClick={handleShare}
             className="flex items-center gap-2 bg-[#dfe1e6] hover:bg-white text-[#172b4d] text-sm font-bold px-3 py-2 rounded-md transition-all ml-2 active:scale-95 shadow-sm"
           >
             <Share2 size={16} />
-            <span>Share</span>
+            <span className="hidden sm:inline">Share</span>
           </button>
         </div>
       </header>

@@ -1,8 +1,23 @@
+export interface Label {
+  id: string;
+  text: string;
+  color: string; // e.g., 'bg-red-500', 'bg-blue-500'
+}
+
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
-  description?: string;
+  description: string;
   priority: 'low' | 'medium' | 'high';
+  labels: Label[];
+  checklists: ChecklistItem[];
+  dueDate?: string;            // Date ke liye (Optional)
 }
 
 export interface Column {

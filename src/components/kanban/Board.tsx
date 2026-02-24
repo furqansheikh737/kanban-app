@@ -9,24 +9,21 @@ import { Plus, X } from 'lucide-react';
 
 export default function Board() {
   const { 
-    boards, 
-    activeBoardId, 
     isLoading, 
     moveTask, 
-    moveColumn, // NEW: Added from context
+    moveColumn,
     addTask, 
     deleteTask, 
     addColumn, 
-    searchTerm 
+    filteredBoard // NEW: Ab hum filteredBoard use karenge
   } = useKanban();
 
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState("");
 
-  const activeBoard = boards.find(b => b.id === activeBoardId);
-
   if (isLoading) return <SkeletonBoard />;
-  if (!activeBoard) return null;
+  // Agar filteredBoard null hai (yani koi board active nahi), toh kuch na dikhao
+  if (!filteredBoard) return null;
 
   const handleAddList = () => {
     if (title.trim()) {
@@ -36,7 +33,6 @@ export default function Board() {
     }
   };
 
-  // NEW: Handle Drag End for both Tasks and Columns
   const onDragEnd = (result: any) => {
     const { type } = result;
     if (type === 'column') {
@@ -68,7 +64,6 @@ export default function Board() {
       >
         <div className="fixed inset-0 bg-black/30 pointer-events-none" />
 
-        {/* NEW: Horizontal Droppable for Column Sorting */}
         <Droppable droppableId="all-columns" direction="horizontal" type="column">
           {(provided) => (
             <div 
@@ -76,22 +71,22 @@ export default function Board() {
               ref={provided.innerRef}
               className="relative z-10 flex flex-nowrap gap-6 items-start h-full"
             >
-              {activeBoard.columnOrder.map((columnId, index) => {
-                const column = activeBoard.columns[columnId];
+              {/* FilteredBoard use karne se search aur priority filter khud ba khud chalenge */}
+              {filteredBoard.columnOrder.map((columnId, index) => {
+                const column = filteredBoard.columns[columnId];
                 if (!column) return null;
 
-                const filteredTasks = column.taskIds
-                  .map((taskId) => activeBoard.tasks[taskId])
-                  .filter((task) => 
-                    task && task.title.toLowerCase().includes(searchTerm.toLowerCase())
-                  );
+                // Ab task filtering context mein ho rahi hai, yahan sirf map karna hai
+                const tasks = column.taskIds
+                  .map((taskId) => filteredBoard.tasks[taskId])
+                  .filter(Boolean); // Safe check
 
                 return (
                   <Column
                     key={column.id}
                     column={column}
-                    index={index} // NEW: Added index for Draggable
-                    tasks={filteredTasks} 
+                    index={index}
+                    tasks={tasks} 
                     onAddTask={(taskTitle) => addTask(column.id, taskTitle)}
                     onDeleteTask={(taskId) => deleteTask(taskId, column.id)}
                   />

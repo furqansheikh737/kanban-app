@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { BoardData, INITIAL_DATA, Task } from '@/src/types/kanban';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { BoardData, INITIAL_DATA, Task, Label } from '@/src/types/kanban';
 import { DropResult } from '@hello-pangea/dnd';
 
 interface KanbanContextType {
@@ -11,6 +11,11 @@ interface KanbanContextType {
   isLoading: boolean;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  // --- Filter Logic ---
+  filterPriority: string | null;
+  setFilterPriority: (priority: string | null) => void;
+  filteredBoard: BoardData | null;
+  // --------------------
   addBoard: (title: string) => void;
   deleteBoard: (id: string) => void;
   addTask: (columnId: string, title: string) => void;
@@ -19,9 +24,13 @@ interface KanbanContextType {
   moveTask: (result: DropResult) => void;
   addColumn: (title: string) => void;
   deleteColumn: (columnId: string) => void;
-  // NEW: Added for Column Editing and Sorting
   updateColumnTitle: (columnId: string, newTitle: string) => void;
   moveColumn: (result: DropResult) => void;
+  toggleLabel: (taskId: string, label: Label) => void;
+  // --- Checklist Functions (Added) ---
+  addChecklistItem: (taskId: string, text: string) => void;
+  toggleChecklistItem: (taskId: string, itemId: string) => void;
+  deleteChecklistItem: (taskId: string, itemId: string) => void;
 }
 
 const KanbanContext = createContext<KanbanContextType | undefined>(undefined);
@@ -31,14 +40,13 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
   const [activeBoardId, setActiveBoardId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterPriority, setFilterPriority] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('kanban-multi-boards');
     const initialBoards = saved ? JSON.parse(saved) : [INITIAL_DATA];
-    
     setBoards(initialBoards);
     setActiveBoardId(initialBoards[0]?.id || "");
-    
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
@@ -49,13 +57,41 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
     }
   }, [boards, isLoading]);
 
+  const filteredBoard = useMemo(() => {
+    const activeBoard = boards.find(b => b.id === activeBoardId);
+    if (!activeBoard) return null;
+    if (!searchTerm && !filterPriority) return activeBoard;
+
+    const newTasks = { ...activeBoard.tasks };
+    const filteredTasks: { [key: string]: Task } = {};
+
+    Object.keys(newTasks).forEach(taskId => {
+      const task = newTasks[taskId];
+      const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesPriority = filterPriority ? task.priority === filterPriority : true;
+
+      if (matchesSearch && matchesPriority) {
+        filteredTasks[taskId] = task;
+      }
+    });
+
+    const newColumns = { ...activeBoard.columns };
+    Object.keys(newColumns).forEach(colId => {
+      newColumns[colId] = {
+        ...newColumns[colId],
+        taskIds: newColumns[colId].taskIds.filter(id => filteredTasks[id])
+      };
+    });
+
+    return { ...activeBoard, tasks: filteredTasks, columns: newColumns };
+  }, [boards, activeBoardId, searchTerm, filterPriority]);
+
   const updateActiveBoard = (updater: (prevBoard: BoardData) => BoardData) => {
     setBoards(prevBoards => 
       prevBoards.map(board => board.id === activeBoardId ? updater(board) : board)
     );
   };
 
-  // --- Board Functions ---
   const addBoard = (title: string) => {
     const newBoard: BoardData = {
       id: `board-${crypto.randomUUID()}`,
@@ -81,11 +117,9 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // --- Column Functions ---
   const addColumn = (title: string) => {
     const newColumnId = `col-${crypto.randomUUID()}`;
     const newColumn = { id: newColumnId, title, taskIds: [] };
-
     updateActiveBoard(board => ({
       ...board,
       columns: { ...board.columns, [newColumnId]: newColumn },
@@ -98,10 +132,8 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
       const newColumns = { ...board.columns };
       const taskIdsToRemove = newColumns[columnId]?.taskIds || [];
       delete newColumns[columnId];
-
       const newTasks = { ...board.tasks };
       taskIdsToRemove.forEach(id => delete newTasks[id]);
-
       return {
         ...board,
         tasks: newTasks,
@@ -111,36 +143,29 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // NEW: Update Column Title (Rename)
   const updateColumnTitle = (columnId: string, newTitle: string) => {
     updateActiveBoard(board => ({
       ...board,
-      columns: {
-        ...board.columns,
-        [columnId]: { ...board.columns[columnId], title: newTitle }
-      }
+      columns: { ...board.columns, [columnId]: { ...board.columns[columnId], title: newTitle } }
     }));
   };
 
-  // --- Task Functions ---
   const addTask = (columnId: string, title: string) => {
     const newTaskId = `task-${crypto.randomUUID()}`;
     const newTask: Task = { 
       id: newTaskId, 
       title, 
       description: "", 
-      priority: "medium" 
+      priority: "medium",
+      labels: [],
+      checklists: [] // Initialize empty checklist
     };
-
     updateActiveBoard(board => ({
       ...board,
       tasks: { ...board.tasks, [newTaskId]: newTask },
       columns: {
         ...board.columns,
-        [columnId]: {
-          ...board.columns[columnId],
-          taskIds: [...board.columns[columnId].taskIds, newTaskId]
-        }
+        [columnId]: { ...board.columns[columnId], taskIds: [...board.columns[columnId].taskIds, newTaskId] }
       }
     }));
   };
@@ -154,43 +179,75 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
         tasks: newTasks,
         columns: {
           ...board.columns,
-          [columnId]: {
-            ...board.columns[columnId],
-            taskIds: board.columns[columnId].taskIds.filter(id => id !== taskId)
-          }
+          [columnId]: { ...board.columns[columnId], taskIds: board.columns[columnId].taskIds.filter(id => id !== taskId) }
         }
       };
     });
   };
 
   const updateTask = (taskId: string, updates: Partial<Task>) => {
+    updateActiveBoard(board => ({
+      ...board,
+      tasks: { ...board.tasks, [taskId]: { ...board.tasks[taskId], ...updates } }
+    }));
+  };
+
+  const toggleLabel = (taskId: string, label: Label) => {
     updateActiveBoard(board => {
-      const updatedTask = { ...board.tasks[taskId], ...updates };
+      const task = board.tasks[taskId];
+      const labels = task.labels || [];
+      const hasLabel = labels.some(l => l.id === label.id);
+      const updatedLabels = hasLabel ? labels.filter(l => l.id !== label.id) : [...labels, label];
       return {
         ...board,
-        tasks: {
-          ...board.tasks,
-          [taskId]: updatedTask
-        }
+        tasks: { ...board.tasks, [taskId]: { ...task, labels: updatedLabels } }
       };
     });
   };
 
-  // NEW: Move Column (Sorting)
+  // --- Checklist Functions Implementation ---
+  const addChecklistItem = (taskId: string, text: string) => {
+    const newItem = { id: `item-${crypto.randomUUID()}`, text, completed: false };
+    updateActiveBoard(board => {
+      const task = board.tasks[taskId];
+      return {
+        ...board,
+        tasks: { ...board.tasks, [taskId]: { ...task, checklists: [...(task.checklists || []), newItem] } }
+      };
+    });
+  };
+
+  const toggleChecklistItem = (taskId: string, itemId: string) => {
+    updateActiveBoard(board => {
+      const task = board.tasks[taskId];
+      const updatedChecklist = (task.checklists || []).map(item =>
+        item.id === itemId ? { ...item, completed: !item.completed } : item
+      );
+      return {
+        ...board,
+        tasks: { ...board.tasks, [taskId]: { ...task, checklists: updatedChecklist } }
+      };
+    });
+  };
+
+  const deleteChecklistItem = (taskId: string, itemId: string) => {
+    updateActiveBoard(board => {
+      const task = board.tasks[taskId];
+      return {
+        ...board,
+        tasks: { ...board.tasks, [taskId]: { ...task, checklists: (task.checklists || []).filter(i => i.id !== itemId) } }
+      };
+    });
+  };
+
   const moveColumn = (result: DropResult) => {
     const { destination, source, draggableId } = result;
-    if (!destination) return;
-    if (destination.index === source.index) return;
-
+    if (!destination || destination.index === source.index) return;
     updateActiveBoard(board => {
       const newColumnOrder = Array.from(board.columnOrder);
       newColumnOrder.splice(source.index, 1);
       newColumnOrder.splice(destination.index, 0, draggableId);
-
-      return {
-        ...board,
-        columnOrder: newColumnOrder,
-      };
+      return { ...board, columnOrder: newColumnOrder };
     });
   };
 
@@ -232,22 +289,12 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
   return (
     <KanbanContext.Provider 
       value={{ 
-        boards,
-        activeBoardId,
-        setActiveBoardId,
-        isLoading, 
-        searchTerm, 
-        setSearchTerm, 
-        addBoard,
-        deleteBoard,
-        addTask, 
-        deleteTask, 
-        updateTask, 
-        moveTask, 
-        addColumn,
-        deleteColumn,
-        updateColumnTitle,
-        moveColumn
+        boards, activeBoardId, setActiveBoardId, isLoading, 
+        searchTerm, setSearchTerm,
+        filterPriority, setFilterPriority, filteredBoard,
+        addBoard, deleteBoard, addTask, deleteTask, updateTask, moveTask, 
+        addColumn, deleteColumn, updateColumnTitle, moveColumn, toggleLabel,
+        addChecklistItem, toggleChecklistItem, deleteChecklistItem // Exported
       }}
     >
       {children}

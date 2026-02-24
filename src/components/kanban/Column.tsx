@@ -5,13 +5,13 @@ import { Droppable, Draggable } from '@hello-pangea/dnd';
 import TaskCard from './TaskCard';
 import NewTaskForm from './NewTaskForm';
 import { Column as ColumnType, Task } from '@/src/types/kanban';
-import { Trash2, MoreHorizontal, Check, X } from 'lucide-react';
+import { Trash2, MoreHorizontal } from 'lucide-react';
 import { useKanban } from '@/src/context/KanbanContext';
 
 interface Props {
   column: ColumnType;
   tasks: Task[];
-  index: number; // New index prop for Draggable
+  index: number; 
   onAddTask: (title: string, description: string) => void;
   onDeleteTask: (taskId: string) => void;
 }
@@ -19,7 +19,6 @@ interface Props {
 export default function Column({ column, tasks, index, onAddTask, onDeleteTask }: Props) {
   const { deleteColumn, updateColumnTitle, searchTerm } = useKanban();
   
-  // States for renaming
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(column.title);
 
@@ -52,30 +51,39 @@ export default function Column({ column, tasks, index, onAddTask, onDeleteTask }
           ref={provided.innerRef}
           className="flex flex-col w-72 bg-[#ebecf0] rounded-xl max-h-full shadow-xl border border-white/20 overflow-hidden group/column shrink-0"
         >
-          {/* --- Column Header (Now with Drag Handle) --- */}
+          {/* --- Column Header --- */}
           <div 
             {...provided.dragHandleProps} 
             className="p-3 pb-1 flex justify-between items-center cursor-grab active:cursor-grabbing"
           >
-            {isEditing ? (
-              <div className="flex items-center gap-1 w-full" onClick={(e) => e.stopPropagation()}>
-                <input
-                  autoFocus
-                  className="text-sm font-bold text-[#172b4d] px-2 py-1 w-full border-2 border-blue-500 rounded outline-none bg-white"
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  onBlur={handleRename}
-                  onKeyDown={handleKeyDown}
-                />
-              </div>
-            ) : (
-              <h2 
-                onClick={() => setIsEditing(true)}
-                className="font-bold text-[#172b4d] text-sm px-2 py-1 flex-1 cursor-pointer truncate hover:bg-black/5 rounded transition-colors"
-              >
-                {column.title}
-              </h2>
-            )}
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {isEditing ? (
+                <div className="flex items-center gap-1 w-full" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    autoFocus
+                    className="text-sm font-bold text-[#172b4d] px-2 py-1 w-full border-2 border-blue-500 rounded outline-none bg-white"
+                    value={editedTitle}
+                    onChange={(e) => setEditedTitle(e.target.value)}
+                    onBlur={handleRename}
+                    onKeyDown={handleKeyDown}
+                  />
+                </div>
+              ) : (
+                <>
+                  <h2 
+                    onClick={() => setIsEditing(true)}
+                    className="font-bold text-[#172b4d] text-sm px-2 py-1 cursor-pointer truncate hover:bg-black/5 rounded transition-colors"
+                  >
+                    {column.title}
+                  </h2>
+                  
+                  {/* --- TASK COUNTER BADGE --- */}
+                  <span className="bg-[#091e42]/10 text-[#44546f] text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                    {tasks.length}
+                  </span>
+                </>
+              )}
+            </div>
             
             <div className="flex items-center gap-1">
               <button 
