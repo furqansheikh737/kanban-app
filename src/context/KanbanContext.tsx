@@ -12,13 +12,16 @@ interface KanbanContextType {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   addBoard: (title: string) => void;
-  deleteBoard: (id: string) => void; // Added deleteBoard type
+  deleteBoard: (id: string) => void;
   addTask: (columnId: string, title: string) => void;
   deleteTask: (taskId: string, columnId: string) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   moveTask: (result: DropResult) => void;
   addColumn: (title: string) => void;
   deleteColumn: (columnId: string) => void;
+  // NEW: Added for Column Editing and Sorting
+  updateColumnTitle: (columnId: string, newTitle: string) => void;
+  moveColumn: (result: DropResult) => void;
 }
 
 const KanbanContext = createContext<KanbanContextType | undefined>(undefined);
@@ -29,26 +32,23 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // 1. Initial Load from LocalStorage
   useEffect(() => {
     const saved = localStorage.getItem('kanban-multi-boards');
     const initialBoards = saved ? JSON.parse(saved) : [INITIAL_DATA];
     
     setBoards(initialBoards);
-    setActiveBoardId(initialBoards[0].id);
+    setActiveBoardId(initialBoards[0]?.id || "");
     
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
 
-  // 2. Save to LocalStorage whenever boards change
   useEffect(() => {
-    if (boards.length > 0) {
+    if (!isLoading && boards.length > 0) {
       localStorage.setItem('kanban-multi-boards', JSON.stringify(boards));
     }
-  }, [boards]);
+  }, [boards, isLoading]);
 
-  // Helper: Active board nikalne ke liye
   const updateActiveBoard = (updater: (prevBoard: BoardData) => BoardData) => {
     setBoards(prevBoards => 
       prevBoards.map(board => board.id === activeBoardId ? updater(board) : board)
@@ -71,16 +71,12 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
     setActiveBoardId(newBoard.id);
   };
 
-  // --- DELETE BOARD FUNCTION (NEWLY ADDED) ---
   const deleteBoard = (id: string) => {
     setBoards(prevBoards => {
       const filteredBoards = prevBoards.filter(board => board.id !== id);
-      
-      // Agar delete hone wala board active tha, toh pehle board par switch karo
       if (id === activeBoardId && filteredBoards.length > 0) {
         setActiveBoardId(filteredBoards[0].id);
       }
-      
       return filteredBoards;
     });
   };
@@ -100,7 +96,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
   const deleteColumn = (columnId: string) => {
     updateActiveBoard(board => {
       const newColumns = { ...board.columns };
-      const taskIdsToRemove = newColumns[columnId].taskIds;
+      const taskIdsToRemove = newColumns[columnId]?.taskIds || [];
       delete newColumns[columnId];
 
       const newTasks = { ...board.tasks };
@@ -115,10 +111,26 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // NEW: Update Column Title (Rename)
+  const updateColumnTitle = (columnId: string, newTitle: string) => {
+    updateActiveBoard(board => ({
+      ...board,
+      columns: {
+        ...board.columns,
+        [columnId]: { ...board.columns[columnId], title: newTitle }
+      }
+    }));
+  };
+
   // --- Task Functions ---
   const addTask = (columnId: string, title: string) => {
     const newTaskId = `task-${crypto.randomUUID()}`;
-    const newTask = { id: newTaskId, title, description: "", priority: "medium" as const };
+    const newTask: Task = { 
+      id: newTaskId, 
+      title, 
+      description: "", 
+      priority: "medium" 
+    };
 
     updateActiveBoard(board => ({
       ...board,
@@ -152,13 +164,34 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateTask = (taskId: string, updates: Partial<Task>) => {
-    updateActiveBoard(board => ({
-      ...board,
-      tasks: {
-        ...board.tasks,
-        [taskId]: { ...board.tasks[taskId], ...updates }
-      }
-    }));
+    updateActiveBoard(board => {
+      const updatedTask = { ...board.tasks[taskId], ...updates };
+      return {
+        ...board,
+        tasks: {
+          ...board.tasks,
+          [taskId]: updatedTask
+        }
+      };
+    });
+  };
+
+  // NEW: Move Column (Sorting)
+  const moveColumn = (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+    if (!destination) return;
+    if (destination.index === source.index) return;
+
+    updateActiveBoard(board => {
+      const newColumnOrder = Array.from(board.columnOrder);
+      newColumnOrder.splice(source.index, 1);
+      newColumnOrder.splice(destination.index, 0, draggableId);
+
+      return {
+        ...board,
+        columnOrder: newColumnOrder,
+      };
+    });
   };
 
   const moveTask = (result: DropResult) => {
@@ -206,13 +239,15 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
         searchTerm, 
         setSearchTerm, 
         addBoard,
-        deleteBoard, // Added to provider
+        deleteBoard,
         addTask, 
         deleteTask, 
         updateTask, 
         moveTask, 
         addColumn,
-        deleteColumn 
+        deleteColumn,
+        updateColumnTitle,
+        moveColumn
       }}
     >
       {children}
