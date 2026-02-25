@@ -56,8 +56,11 @@ export default function FilterMenu() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            /* FIX: right-0 ensures it stays within screen on mobile */
-            className="absolute right-0 md:left-0 mt-2 w-[280px] bg-white rounded-2xl shadow-2xl border border-gray-100 z-[110] overflow-hidden origin-top-right md:origin-top-left"
+            /* FIX: Removed 'md:left-0' and 'md:origin-top-left'. 
+               Now 'right-0' and 'origin-top-right' will work on all screen sizes 
+               to keep the dropdown inside the viewport.
+            */
+            className="absolute right-0 mt-2 w-[280px] bg-white rounded-2xl shadow-2xl border border-gray-100 z-[110] overflow-hidden origin-top-right"
           >
             <div className="p-4">
               <div className="flex justify-between items-center mb-4 border-b border-gray-50 pb-2">
