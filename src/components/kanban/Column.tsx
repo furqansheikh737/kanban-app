@@ -86,12 +86,13 @@ export default function Column({ column, tasks, index, onAddTask, onDeleteTask }
             </div>
             
             <div className="flex items-center gap-1">
+              {/* FIX: Mobile par hamesha dikhega (opacity-100), Desktop par sirf hover par (md:opacity-0 md:group-hover/column:opacity-100) */}
               <button 
                 onClick={handleDeleteList}
-                className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-all opacity-0 group-hover/column:opacity-100"
+                className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-all opacity-100 md:opacity-0 md:group-hover/column:opacity-100 bg-red-50 md:bg-transparent"
                 title="Delete list"
               >
-                <Trash2 size={14} />
+                <Trash2 size={15} />
               </button>
               
               <button className="p-1.5 text-[#44546f] hover:bg-[#dcdfe4] rounded-md transition-colors">

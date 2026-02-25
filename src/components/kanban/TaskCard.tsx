@@ -45,7 +45,6 @@ export default function TaskCard({ task, index, onDelete }: Props) {
     setIsEditing(false);
   };
 
-  // Checklist progress calculation
   const totalItems = task.checklists?.length || 0;
   const completedItems =
     task.checklists?.filter((i) => i.completed).length || 0;
@@ -132,41 +131,40 @@ export default function TaskCard({ task, index, onDelete }: Props) {
               )}
 
               {!isEditing && (
-                <div className="flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
+                /* FIX: Added 'opacity-100 md:opacity-0' to show icons by default on mobile */
+                <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover/card:opacity-100 transition-opacity duration-200">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsEditing(true);
                     }}
-                    className="p-1 text-[#44546f] hover:text-[#0052cc] hover:bg-blue-50 rounded"
+                    className="p-1.5 text-[#44546f] hover:text-[#0052cc] hover:bg-blue-50 rounded bg-gray-100 md:bg-transparent"
                   >
-                    <Edit2 size={13} />
+                    <Edit2 size={14} />
                   </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete();
                     }}
-                    className="p-1 text-[#44546f] hover:text-red-600 hover:bg-red-50 rounded"
+                    className="p-1.5 text-[#44546f] hover:text-red-600 hover:bg-red-50 rounded bg-gray-100 md:bg-transparent"
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               )}
             </div>
 
-            {/* --- BOTTOM ROW: Metadata (Updated with Date & Checklist) --- */}
+            {/* --- BOTTOM ROW: Metadata --- */}
             <div className="flex items-center justify-between mt-3">
               <div className="flex items-center gap-3 text-[#44546f]">
                 {task.description && <AlignLeft size={14} />}
 
-                {/* Due Date Badge */}
                 <div className="flex items-center gap-1 bg-[#091e42]/5 px-1.5 py-0.5 rounded text-[10px] font-bold text-[#44546f] hover:bg-[#091e42]/10 transition-colors">
                   <Calendar size={11} className="text-[#44546f]" />
                   <span>{task.dueDate || "16 July"}</span>
                 </div>
 
-                {/* Checklist Badge (Only shows if items exist) */}
                 {totalItems > 0 && (
                   <div
                     className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${completedItems === totalItems ? "bg-green-500 text-white" : "bg-[#091e42]/5 text-[#44546f]"}`}

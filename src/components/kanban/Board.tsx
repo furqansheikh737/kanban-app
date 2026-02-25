@@ -15,14 +15,13 @@ export default function Board() {
     addTask, 
     deleteTask, 
     addColumn, 
-    filteredBoard // NEW: Ab hum filteredBoard use karenge
+    filteredBoard 
   } = useKanban();
 
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState("");
 
   if (isLoading) return <SkeletonBoard />;
-  // Agar filteredBoard null hai (yani koi board active nahi), toh kuch na dikhao
   if (!filteredBoard) return null;
 
   const handleAddList = () => {
@@ -46,22 +45,22 @@ export default function Board() {
     <DragDropContext onDragEnd={onDragEnd}>
       <div 
         className={`
-          absolute inset-0 flex overflow-x-auto overflow-y-hidden p-6 gap-6 select-none
-          scrollbar-h-4
+          absolute inset-0 flex overflow-x-auto overflow-y-hidden 
+          p-3 md:p-6 gap-4 md:gap-6 select-none
+          scrollbar-thin md:scrollbar-h-4
           scrollbar-thumb-white/80
           scrollbar-track-black/40
           scrollbar-thumb-rounded-full
-          scrollbar-track-rounded-full
           hover:scrollbar-thumb-white
-          active:scrollbar-thumb-gray-200
         `}
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1769708984129-adb918f38ad5?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDE3fENEd3V3WEpBYkV3fHxlbnwwfHx8fHw%3D')`,
+          backgroundImage: `url('https://images.unsplash.com/photo-1769708984129-adb918f38ad5?w=1200&auto=format&fit=crop&q=80')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'fixed'
         }}
       >
+        {/* Background Overlay */}
         <div className="fixed inset-0 bg-black/30 pointer-events-none" />
 
         <Droppable droppableId="all-columns" direction="horizontal" type="column">
@@ -69,17 +68,15 @@ export default function Board() {
             <div 
               {...provided.droppableProps}
               ref={provided.innerRef}
-              className="relative z-10 flex flex-nowrap gap-6 items-start h-full"
+              className="relative z-10 flex flex-nowrap gap-4 md:gap-6 items-start h-full"
             >
-              {/* FilteredBoard use karne se search aur priority filter khud ba khud chalenge */}
               {filteredBoard.columnOrder.map((columnId, index) => {
                 const column = filteredBoard.columns[columnId];
                 if (!column) return null;
 
-                // Ab task filtering context mein ho rahi hai, yahan sirf map karna hai
                 const tasks = column.taskIds
                   .map((taskId) => filteredBoard.tasks[taskId])
-                  .filter(Boolean); // Safe check
+                  .filter(Boolean);
 
                 return (
                   <Column
@@ -94,8 +91,8 @@ export default function Board() {
               })}
               {provided.placeholder}
 
-              {/* Add Another List Section */}
-              <div className="min-w-[272px] shrink-0 pb-10">
+              {/* Add Another List Section - Responsive Width */}
+              <div className="w-[272px] md:w-[300px] shrink-0 pb-10">
                 {isAdding ? (
                   <div className="bg-white/90 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-white/20 animate-in fade-in zoom-in duration-200">
                     <input
