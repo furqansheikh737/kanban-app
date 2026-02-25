@@ -34,7 +34,6 @@ export interface BoardData {
   columnOrder: string[];
 }
 
-// Yahan "Sales Pipeline" ko badal kar "Default" kar diya hai
 export const INITIAL_DATA: BoardData = {
   id: 'board-1',
   title: 'Default', 
@@ -43,7 +42,10 @@ export const INITIAL_DATA: BoardData = {
       id: 'task-1', 
       title: 'Welcome to your Kanban!', 
       description: 'This is a sample task.', 
-      priority: 'low' 
+      priority: 'low',
+      // FIX: Ye empty arrays add karna zaroori hain kyunke interface mein required hain
+      labels: [],
+      checklists: []
     },
   },
   columns: {
